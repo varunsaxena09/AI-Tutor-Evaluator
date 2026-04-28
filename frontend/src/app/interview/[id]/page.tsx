@@ -16,10 +16,10 @@ export default function InterviewSession({ params }: { params: { id: string } })
   const [transcript, setTranscript] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null); // ✅ NEW: track errors
+  const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
-  const isFinishingRef = useRef(false); // ✅ NEW: prevent double finishSession calls
+  const isFinishingRef = useRef(false);
 
   const fetchNextQuestion = async () => {
     setLoading(true);
@@ -34,7 +34,6 @@ export default function InterviewSession({ params }: { params: { id: string } })
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // ✅ FIX Bug 1: handle non-ok responses explicitly
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || `Server error: ${res.status}`);
@@ -45,7 +44,6 @@ export default function InterviewSession({ params }: { params: { id: string } })
       const data = await res.json();
 
       if (data.isComplete) {
-        // ✅ FIX Bug 2: guard against double calls
         if (!isFinishingRef.current) {
           isFinishingRef.current = true;
           await finishSession(token);
@@ -126,7 +124,7 @@ export default function InterviewSession({ params }: { params: { id: string } })
       router.push('/result');
     } catch (err) {
       console.error('FINISH ERROR:', err);
-      isFinishingRef.current = false; // ✅ reset on error so user can retry
+      isFinishingRef.current = false;
       setError('Failed to evaluate session. Please try again.');
     }
   };
@@ -157,7 +155,6 @@ export default function InterviewSession({ params }: { params: { id: string } })
         }
       );
 
-      // ✅ FIX Bug 1: handle non-ok submit response
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         setError(errData.error || `Submit failed: ${res.status}`);
@@ -168,17 +165,15 @@ export default function InterviewSession({ params }: { params: { id: string } })
       const data = await res.json();
       console.log('ANSWER RESPONSE:', data);
 
-      // ✅ FIX Bug 2: if complete, finish — do NOT also call fetchNextQuestion
       if (data.isComplete) {
         setProcessing(false);
         if (!isFinishingRef.current) {
           isFinishingRef.current = true;
           await finishSession(token);
         }
-        return; // ✅ CRITICAL: early return prevents fetchNextQuestion
+        return;
       }
 
-      // ✅ Only fetch next question if interview is NOT complete
       await fetchNextQuestion();
 
     } catch (err) {
@@ -189,7 +184,9 @@ export default function InterviewSession({ params }: { params: { id: string } })
     setProcessing(false);
   };
 
-  // ✅ Loading state
+  // Derived live word count from transcript
+  const wordCount = transcript.trim() === '' ? 0 : transcript.trim().split(/\s+/).length;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
@@ -198,7 +195,6 @@ export default function InterviewSession({ params }: { params: { id: string } })
     );
   }
 
-  // ✅ Error state — now shows actual error instead of "Interview completed or error fetching"
   if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-foreground gap-4">
@@ -216,7 +212,6 @@ export default function InterviewSession({ params }: { params: { id: string } })
     );
   }
 
-  // ✅ No question — only shown if truly no question (not on completion)
   if (!currentQuestion) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
@@ -275,6 +270,48 @@ export default function InterviewSession({ params }: { params: { id: string } })
             <div className="absolute bottom-6 right-6 flex items-center gap-2 text-primary font-semibold">
               <span className="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
               Listening...
+            </div>
+          )}
+        </div>
+
+        {/* ✅ Live word count feedback */}
+        <div className="w-full -mt-4 mb-4 flex flex-col items-center gap-1">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            {wordCount === 0 && (
+              <span className="text-muted-foreground">
+                💡 Speak your answer — word count will appear here
+              </span>
+            )}
+            {wordCount > 0 && wordCount < 3 && (
+              <span className="text-destructive">
+                🔴 {wordCount} word{wordCount > 1 ? 's' : ''} — Too short, will be marked incorrect
+              </span>
+            )}
+            {wordCount >= 3 && wordCount <= 8 && (
+              <span className="text-yellow-500">
+                🟡 {wordCount} words — Partial credit range, try adding more detail
+              </span>
+            )}
+            {wordCount >= 9 && (
+              <span className="text-green-500">
+                🟢 {wordCount} words — Great detail!
+              </span>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {wordCount > 0 && (
+            <div className="w-full max-w-sm h-2 bg-secondary rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  wordCount < 3
+                    ? 'bg-destructive'
+                    : wordCount <= 8
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min((wordCount / 12) * 100, 100)}%` }}
+              />
             </div>
           )}
         </div>
