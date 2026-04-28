@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CANDIDATE
+}
+
+enum Status {
+  SELECTED
+  NEEDS_IMPROVEMENT
+  REJECTED
+  PENDING
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CANDIDATE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions  InterviewSession[]
+}
+
+model InterviewSession {
+  id          Int      @id @default(autoincrement())
+  candidateId Int
+  candidate   User     @relation(fields: [candidateId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  maxDifficultyReached Int @default(1)
+
+  answers     Answer[]
+  evaluation  Evaluation?
+}
+
+model Question {
+  id        Int      @id @default(autoincrement())
+  text      String
+  difficulty Int     @default(1)
+  order     Int
+  createdAt DateTime @default(now())
+
+  answers   Answer[]
+}
+
+model Answer {
+  id        Int      @id @default(autoincrement())
+  sessionId Int
+  session   InterviewSession @relation(fields: [sessionId], references: [id])
+  questionId Int
+  question  Question @relation(fields: [questionId], references: [id])
+  
+  transcript String?
+  audioUrl   String?
+  createdAt  DateTime @default(now())
+
+  correctness String?   // ✅ ADD THIS
+  score       Float?
+
+  metrics   CommunicationMetrics?
+}
+
+model CommunicationMetrics {
+  id              Int      @id @default(autoincrement())
+  answerId        Int      @unique
+  answer          Answer   @relation(fields: [answerId], references: [id])
+  
+  fillerCount     Int      @default(0)
+  fillerDensity   Float    @default(0)
+  pauseCount      Int      @default(0)
+  avgPauseDuration Float   @default(0)
+  speakingPace    Float    @default(0)
+  vocabularyRichness Float @default(0)
+  confidenceScore Float    @default(0)
+}
+
+model Evaluation {
+  id                Int      @id @default(autoincrement())
+  sessionId         Int      @unique
+  session           InterviewSession @relation(fields: [sessionId], references: [id])
+  
+  overallScore      Float    @default(0)
+  clarityScore      Float    @default(0)
+  confidenceScore   Float    @default(0)
+  communicationScore Float   @default(0)
+
+  warmthScore       Float    @default(0)
+  simplicityScore   Float    @default(0)
+  patienceScore     Float    @default(0)
+  fluencyScore      Float    @default(0)
+
+  totalFillerWords  Int      @default(0)
+  totalPauses       Int      @default(0)
+  speakingPace      Float    @default(0)
+  vocabularyRichness Float   @default(0)
+  
+  detailedFeedback  String?
+  recommendation    Status   @default(PENDING)
+  createdAt         DateTime @default(now())
+}
