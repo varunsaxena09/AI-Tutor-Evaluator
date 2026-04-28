@@ -16,7 +16,7 @@ export default function AdminDashboard() {
       if (!token || user.role !== 'ADMIN') return router.push('/login');
       
       try {
-        const res = await fetch('http://localhost:5000/api/dashboard/admin', {
+        const res = await fetch(`https://ai-tutor-evaluator.onrender.com/api/dashboard/admin`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

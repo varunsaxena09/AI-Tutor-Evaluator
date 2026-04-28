@@ -30,7 +30,7 @@ export default function InterviewSession({ params }: { params: { id: string } })
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/interviews/session/${sessionId}/next-question`,
+        `https://ai-tutor-evaluator.onrender.com/api/interviews/session/${sessionId}/next-question`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -112,7 +112,7 @@ export default function InterviewSession({ params }: { params: { id: string } })
   const finishSession = async (token: string) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/interviews/session/${sessionId}/evaluate`,
+        `https://ai-tutor-evaluator.onrender.com/api/interviews/session/${sessionId}/evaluate`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -143,7 +143,7 @@ export default function InterviewSession({ params }: { params: { id: string } })
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/interviews/session/${sessionId}/answer`,
+        `https://ai-tutor-evaluator.onrender.com/api/interviews/session/${sessionId}/answer`,
         {
           method: 'POST',
           headers: {

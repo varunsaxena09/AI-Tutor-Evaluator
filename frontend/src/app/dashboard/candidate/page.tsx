@@ -27,7 +27,7 @@ export default function CandidateDashboard() {
       if (!token) return router.push('/login');
       
       try {
-        const res = await fetch('http://localhost:5000/api/dashboard/candidate', {
+        const res = await fetch(`https://ai-tutor-evaluator.onrender.com/api/dashboard/candidate`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -47,7 +47,7 @@ export default function CandidateDashboard() {
 
   const handleStartInterview = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:5000/api/interviews/session', {
+    const res = await fetch(`https://ai-tutor-evaluator.onrender.com/api/interviews/session`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` }
     });
